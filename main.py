@@ -235,7 +235,6 @@ def run():
     training_timestamp = str(time.time())
 
     # Download pretrained vgg model
-    helper.maybe_download_pretrained_vgg(data_dir)
 
     # OPTIONAL: Train and Inference on the cityscapes dataset instead of the Kitti dataset.
     # You'll need a GPU with at least 10 teraFLOPS to train on.
@@ -327,9 +326,9 @@ def run():
                 global VGG_INPUT
                 VGG_INPUT = vgg_input
 
-                clip1 = VideoFileClip("project_video.mp4")
+                clip1 = VideoFileClip("video/drive_2.mp4")
                 white_clip = clip1.fl_image(process_image) #NOTE: this function expects color images!!
-                white_clip.write_videofile("output.mp4", audio=False)
+                white_clip.write_videofile("video/drive_2_out.mp4", audio=False)
 
 
 
@@ -340,8 +339,16 @@ def process_image(img):
     logits = LOGITS
     image_shape = IMAGE_SHAPE
 
-    img = scipy.misc.imresize(img, IMAGE_SHAPE)
     image = img
+
+    height = image.shape[0]
+
+    crop_top = np.math.floor(height*0.25)
+    crop_bottom = height - np.math.floor(height*0.25)
+
+    image = image[crop_top:crop_bottom, :]
+
+    image = scipy.misc.imresize(image, IMAGE_SHAPE)
 
     keep_prob = KEEP_PROB
     vgg_input = VGG_INPUT
