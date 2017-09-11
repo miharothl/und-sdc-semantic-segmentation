@@ -81,7 +81,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
                                       kernel_initializer=tf.truncated_normal_initializer(stddev=hyper_init),
                                       kernel_regularizer=tf.contrib.layers.l2_regularizer(hyper_l2_reg))
 
-    fcn_env_layer3 = tf.layers.conv2d(vgg_layer3_out, num_classes,
+    fcn_enc_layer3 = tf.layers.conv2d(vgg_layer3_out, num_classes,
                                       kernel_size=1,
                                       strides=(1, 1),
                                       kernel_initializer=tf.truncated_normal_initializer(stddev=hyper_init),
@@ -107,9 +107,9 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
                                       kernel_initializer=tf.truncated_normal_initializer(stddev=hyper_init),
                                       kernel_regularizer=tf.contrib.layers.l2_regularizer(hyper_l2_reg))
 
-    fcn_dev_layer3_skip = tf.add(fcn_dec_layer4_upscale, fcn_env_layer3)
+    fcn_dec_layer3_skip = tf.add(fcn_dec_layer4_upscale, fcn_enc_layer3)
 
-    output = tf.layers.conv2d_transpose(fcn_dev_layer3_skip, num_classes,
+    output = tf.layers.conv2d_transpose(fcn_dec_layer3_skip, num_classes,
                                       kernel_size=(16, 16),
                                       strides=(8, 8),
                                       padding='SAME',
