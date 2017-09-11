@@ -201,7 +201,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
                                                                int((stop_time - start_time)),
                                                                loss))
 
-        if i+1 % 2 == 0:
+        if (i+1) % 3 == 0:
             if not unit_test:
                 helper.save_trained_model(models_dir, training_timestamp, sess, epoch=i+1)
                 model_saved = True
@@ -229,8 +229,8 @@ def run():
     models_dir = './models'
     tests.test_for_kitti_dataset(data_dir)
 
-    epochs = 1 # 5
-    batch_size = 4
+    epochs = 12 # 5
+    batch_size = 15
 
     training_timestamp = str(time.time())
 
@@ -245,7 +245,7 @@ def run():
         # Path to vgg model
         vgg_path = os.path.join(data_dir, 'vgg')
         # Create function to get batches
-        get_batches_fn = helper.gen_batch_function(os.path.join(data_dir, 'data_road_small/training'), image_shape)
+        get_batches_fn = helper.gen_batch_function(os.path.join(data_dir, 'data_road/training'), image_shape)
 
         # OPTIONAL: Augment Images for better results
         #  https://datascience.stackexchange.com/questions/5224/how-to-prepare-augment-images-for-neural-network
@@ -265,7 +265,7 @@ def run():
         # Train NN using the train_nn function
         sess.run(tf.global_variables_initializer())
 
-        if False:
+        if 0:
             train_nn(sess,
                  epochs,
                  batch_size,
@@ -283,7 +283,7 @@ def run():
 
 
             # Save inference data using helper.save_inference_samples
-            if False:
+            if 0:
                 helper.save_inference_samples(runs_dir,
                                       training_timestamp,
                                       data_dir,
@@ -295,7 +295,7 @@ def run():
                                       )
 
         # OPTIONAL: Apply the trained model to a video
-        if True:
+        if 1:
             pass
 
 
@@ -303,9 +303,9 @@ def run():
                 sess.run(tf.global_variables_initializer())
                 saver = tf.train.Saver()
 
-                model_file = "./models/1505123377.242388/1 - epoch.meta"
                 model_file = "./models/1505127966.234497/1-epoch"
-
+                model_file = "./models/1505134276.3176534/20-epoch"
+                
                 print("Restoring model...")
                 saver.restore(sess, model_file)
                 print("Model restored.")
@@ -335,22 +335,6 @@ def run():
 
 
 def process_image(img):
-
-    print(GLOBAL)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     sess = SESSION
     logits = LOGITS
