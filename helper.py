@@ -9,6 +9,7 @@ import time
 import tensorflow as tf
 from glob import glob
 from urllib.request import urlretrieve
+
 from tqdm import tqdm
 
 
@@ -94,9 +95,32 @@ def gen_batch_function(data_folder, image_shape):
                 images.append(image)
                 gt_images.append(gt_image)
 
-            yield np.array(images), np.array(gt_images)
+            images_train = images[:int(batch_size*0.8)]
+            gt_images_train = gt_images[:int(batch_size*0.8)]
+
+            images_val = images[int(batch_size*0.8):]
+            gt_images_val = gt_images[int(batch_size*0.8):]
+
+            # yield np.array(images), np.array(gt_images)
+            yield np.array(images_train), np.array(gt_images_train), np.array(images_val), np.array(gt_images_val)
     return get_batches_fn
 
+
+# def validation_test(sess, logits, keep_prob, image_pl, data_folder, image_shape, image_val, gt_image_val):
+#     for image_file in glob(os.path.join(data_folder, 'image_2', '*.png')):
+#         image = scipy.misc.imresize(scipy.misc.imread(image_file), image_shape)
+#
+#         im_softmax = sess.run(
+#             [tf.nn.softmax(logits)],
+#             {keep_prob: 1.0, image_pl: [image]})
+#         im_softmax = im_softmax[0][:, 1].reshape(image_shape[0], image_shape[1])
+#         segmentation = (im_softmax > 0.5).reshape(image_shape[0], image_shape[1], 1)
+#         mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
+#         mask = scipy.misc.toimage(mask, mode="RGBA")
+#         street_im = scipy.misc.toimage(image)
+#         street_im.paste(mask, box=None, mask=mask)
+#
+#         yield os.path.basename(image_file), np.array(street_im)
 
 def gen_test_output(sess, logits, keep_prob, image_pl, data_folder, image_shape):
     """
@@ -125,9 +149,9 @@ def gen_test_output(sess, logits, keep_prob, image_pl, data_folder, image_shape)
         yield os.path.basename(image_file), np.array(street_im)
 
 
-def save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image):
+def save_inference_samples(runs_dir, timestamp_label, data_dir, sess, image_shape, logits, keep_prob, input_image):
     # Make folder for current run
-    output_dir = os.path.join(runs_dir, str(time.time()))
+    output_dir = os.path.join(runs_dir, timestamp_label)
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
     os.makedirs(output_dir)
@@ -138,3 +162,23 @@ def save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_p
         sess, logits, keep_prob, input_image, os.path.join(data_dir, 'data_road/testing'), image_shape)
     for name, image in image_outputs:
         scipy.misc.imsave(os.path.join(output_dir, name), image)
+
+
+def save_trained_model(models_dir, timestamp_label, sess, epoch):
+    # Make folder for current run
+    output_dir = os.path.join(models_dir, timestamp_label)
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
+    os.makedirs(output_dir)
+
+    model_dir = output_dir + "/" + "%s-epoch" % (epoch)
+
+    saver = tf.train.Saver()
+
+    os.makedirs(model_dir)
+    save_path = saver.save(sess, model_dir)
+    print("Model saved in file: %s" % save_path)
+    # saver.save(sess, 'fcn')
+    # print("Model saved")
+
+

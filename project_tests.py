@@ -117,6 +117,8 @@ def test_train_nn(train_nn):
 
     def get_batches_fn(batach_size_parm):
         shape = [batach_size_parm, 2, 3, 3]
+        shape = [batach_size_parm, 4, 3, 3]
+
         return np.arange(np.prod(shape)).reshape(shape)
 
     train_op = tf.constant(0)
@@ -125,6 +127,9 @@ def test_train_nn(train_nn):
     correct_label = tf.placeholder(tf.float32, name='correct_label')
     keep_prob = tf.placeholder(tf.float32, name='keep_prob')
     learning_rate = tf.placeholder(tf.float32, name='learning_rate')
+    models_dir = "some_dir"
+    training_timestamp = "1234"
+    unit_test = True
     with tf.Session() as sess:
         parameters = {
             'sess': sess,
@@ -136,7 +141,11 @@ def test_train_nn(train_nn):
             'input_image': input_image,
             'correct_label': correct_label,
             'keep_prob': keep_prob,
-            'learning_rate': learning_rate}
+            'learning_rate': learning_rate,
+            'models_dir': models_dir,
+            'training_timestamp': training_timestamp,
+            'unit_test': unit_test
+        }
         _prevent_print(train_nn, parameters)
 
 

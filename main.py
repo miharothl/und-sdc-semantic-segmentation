@@ -1,10 +1,20 @@
 import os.path
 import tensorflow as tf
+import time
+import numpy as np
+import scipy.misc
+
 import helper
 import warnings
 from distutils.version import LooseVersion
 import project_tests as tests
 
+SESSION = None
+LOGITS = None
+IMAGE_SHAPE = None
+GLOBAL = 1
+KEEP_PROB = None
+VGG_INPUT = None
 
 # Check TensorFlow Version
 assert LooseVersion(tf.__version__) >= LooseVersion('1.0'), 'Please use TensorFlow version 1.0 or newer.  You are using {}'.format(tf.__version__)
@@ -16,6 +26,7 @@ if not tf.test.gpu_device_name():
 else:
     print('Default GPU Device: {}'.format(tf.test.gpu_device_name()))
 
+print("Initializing...")
 
 def load_vgg(sess, vgg_path):
     """
@@ -142,7 +153,7 @@ tests.test_optimize(optimize)
 
 
 def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_loss, input_image,
-             correct_label, keep_prob, learning_rate):
+             correct_label, keep_prob, learning_rate, models_dir, training_timestamp, unit_test = False):
     """
     Train neural network and print out the loss during training.
     :param sess: TF Session
@@ -157,16 +168,51 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     :param learning_rate: TF Placeholder for learning rate
     """
 
-    for epoch in range(epochs):
-        for image, image_gt in get_batches_fn(batch_size):
+    print("Training...")
+
+    model_saved = False
+
+
+    for i in range(epochs):
+
+        batch = 0
+
+        for image, gt_image, image_val, gt_image_val in get_batches_fn(batch_size):
+            batch += 1
+            start_time = time.time()
+
             _, loss = sess.run([train_op, cross_entropy_loss], feed_dict={
                 input_image: image,
-                correct_label: image_gt,
+                correct_label: gt_image,
                 keep_prob: 0.5,
                 learning_rate: 0.0001 #/(1+epoch/2)
             })
 
-            print("EPOCH: {}/{} Loss: {}".format(epoch, epochs, loss))
+            stop_time = time.time()
+
+            # meaniou = tf.metrics.mean_iou(image_gt, image_gt, num_classes=2)
+            # a = sess.run(meaniou)
+            # np.shape(im_softmax[0][:, 1])
+
+
+            print("Epoch {}/{} batch {} {}s - loss: {}".format(i+1,
+                                                               epochs,
+                                                               batch,
+                                                               int((stop_time - start_time)),
+                                                               loss))
+
+        if i+1 % 2 == 0:
+            if not unit_test:
+                helper.save_trained_model(models_dir, training_timestamp, sess, epoch=i+1)
+                model_saved = True
+
+    if not model_saved:
+        if not unit_test:
+            helper.save_trained_model(models_dir, training_timestamp, sess, epoch=i+1)
+
+    # Train on 3600 samples, validate on 900 samples
+    # Epoch 1/4 28s - loss: 0.0813 - val_loss: 0.0762
+    # Epoch 2/4
 
     pass
 tests.test_train_nn(train_nn)
@@ -180,10 +226,13 @@ def run():
     image_shape = (160, 576)
     data_dir = './data'
     runs_dir = './runs'
+    models_dir = './models'
     tests.test_for_kitti_dataset(data_dir)
 
-    epochs = 3 # 5
+    epochs = 1 # 5
     batch_size = 4
+
+    training_timestamp = str(time.time())
 
     # Download pretrained vgg model
     helper.maybe_download_pretrained_vgg(data_dir)
@@ -196,28 +245,137 @@ def run():
         # Path to vgg model
         vgg_path = os.path.join(data_dir, 'vgg')
         # Create function to get batches
-        get_batches_fn = helper.gen_batch_function(os.path.join(data_dir, 'data_road/training'), image_shape)
+        get_batches_fn = helper.gen_batch_function(os.path.join(data_dir, 'data_road_small/training'), image_shape)
 
         # OPTIONAL: Augment Images for better results
         #  https://datascience.stackexchange.com/questions/5224/how-to-prepare-augment-images-for-neural-network
 
-        # TODO: Build NN using load_vgg, layers, and optimize function
+        # Build NN using load_vgg, layers, and optimize function
         label = tf.placeholder(tf.int32)
         learning_rate = tf.placeholder(tf.float32)
 
         vgg_input, vgg_keep_prob, vgg_layer3, vgg_layer4, vgg_layer7 = load_vgg(sess, vgg_path)
-        fcn_output = layers(vgg_layer3, vgg_layer4, vgg_layer7, num_classes)
+        fcn_output = layers(vgg_layer3,
+                            vgg_layer4,
+                            vgg_layer7,
+                            num_classes)
+
         logits, train_op, cross_entropy_loss = optimize(fcn_output, label, learning_rate, num_classes)
 
-        # TODO: Train NN using the train_nn function
+        # Train NN using the train_nn function
         sess.run(tf.global_variables_initializer())
-        train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_loss, vgg_input, label,
-                 vgg_keep_prob, learning_rate)
 
-        # TODO: Save inference data using helper.save_inference_samples
-        helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, vgg_keep_prob, vgg_input)
+        if False:
+            train_nn(sess,
+                 epochs,
+                 batch_size,
+                 get_batches_fn,
+                 train_op,
+                 cross_entropy_loss,
+                 vgg_input,
+                 label,
+                 vgg_keep_prob,
+                 learning_rate,
+                 models_dir,
+                 training_timestamp,
+                 )
+
+
+
+            # Save inference data using helper.save_inference_samples
+            if False:
+                helper.save_inference_samples(runs_dir,
+                                      training_timestamp,
+                                      data_dir,
+                                      sess,
+                                      image_shape,
+                                      logits,
+                                      vgg_keep_prob,
+                                      vgg_input,
+                                      )
 
         # OPTIONAL: Apply the trained model to a video
+        if True:
+            pass
+
+
+            with tf.Session() as sess:
+                sess.run(tf.global_variables_initializer())
+                saver = tf.train.Saver()
+
+                model_file = "./models/1505123377.242388/1 - epoch.meta"
+                model_file = "./models/1505127966.234497/1-epoch"
+
+                print("Restoring model...")
+                saver.restore(sess, model_file)
+                print("Model restored.")
+
+                from moviepy.video.io.VideoFileClip import VideoFileClip
+
+                global SESSION
+                SESSION = sess
+
+                global LOGITS
+                LOGITS = logits
+
+                global IMAGE_SHAPE
+                IMAGE_SHAPE = image_shape
+
+                global KEEP_PROB
+                KEEP_PROB = vgg_keep_prob
+
+                global VGG_INPUT
+                VGG_INPUT = vgg_input
+
+                clip1 = VideoFileClip("project_video.mp4")
+                white_clip = clip1.fl_image(process_image) #NOTE: this function expects color images!!
+                white_clip.write_videofile("output.mp4", audio=False)
+
+
+
+
+def process_image(img):
+
+    print(GLOBAL)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    sess = SESSION
+    logits = LOGITS
+    image_shape = IMAGE_SHAPE
+
+    img = scipy.misc.imresize(img, IMAGE_SHAPE)
+    image = img
+
+    keep_prob = KEEP_PROB
+    vgg_input = VGG_INPUT
+
+    im_softmax = sess.run(
+        [tf.nn.softmax(logits)],
+        {keep_prob: 1.0, vgg_input : [image]})
+
+    im_softmax = im_softmax[0][:, 1].reshape(image_shape[0], image_shape[1])
+    segmentation = (im_softmax > 0.5).reshape(image_shape[0], image_shape[1], 1)
+    mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
+    mask = scipy.misc.toimage(mask, mode="RGBA")
+    street_im = scipy.misc.toimage(image)
+    street_im.paste(mask, box=None, mask=mask)
+
+    return np.array(street_im)
+
+    return img
 
 
 if __name__ == '__main__':
