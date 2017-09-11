@@ -311,9 +311,9 @@ def run():
                 global VGG_INPUT
                 VGG_INPUT = vgg_input
 
-                clip = VideoFileClip("video/project_video.mp4")
+                clip = VideoFileClip("video/drive_3.mp4")
                 white_clip = clip.fl_image(process_image) #NOTE: this function expects color images!!
-                white_clip.write_videofile("video/project_video_out.mp4", audio=False)
+                white_clip.write_videofile("video/drive_3_out.mp4", audio=False)
 
 
 def process_image(image):
