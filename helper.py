@@ -122,6 +122,7 @@ def gen_batch_function(data_folder, image_shape):
 #
 #         yield os.path.basename(image_file), np.array(street_im)
 
+
 def gen_test_output(sess, logits, keep_prob, image_pl, data_folder, image_shape):
     """
     Generate test output using the test images
@@ -165,6 +166,7 @@ def save_inference_samples(runs_dir, timestamp_label, data_dir, sess, image_shap
 
 
 def save_trained_model(models_dir, timestamp_label, sess, epoch):
+
     # Make folder for current run
     output_dir = os.path.join(models_dir, timestamp_label)
     if os.path.exists(output_dir):
@@ -178,7 +180,5 @@ def save_trained_model(models_dir, timestamp_label, sess, epoch):
     os.makedirs(model_dir)
     save_path = saver.save(sess, model_dir)
     print("Model saved in file: %s" % save_path)
-    # saver.save(sess, 'fcn')
-    # print("Model saved")
 
 

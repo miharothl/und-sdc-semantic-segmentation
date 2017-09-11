@@ -9,12 +9,6 @@ import warnings
 from distutils.version import LooseVersion
 import project_tests as tests
 
-SESSION = None
-LOGITS = None
-IMAGE_SHAPE = None
-GLOBAL = 1
-KEEP_PROB = None
-VGG_INPUT = None
 
 # Check TensorFlow Version
 assert LooseVersion(tf.__version__) >= LooseVersion('1.0'), 'Please use TensorFlow version 1.0 or newer.  You are using {}'.format(tf.__version__)
@@ -190,36 +184,32 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
 
             stop_time = time.time()
 
-            # meaniou = tf.metrics.mean_iou(image_gt, image_gt, num_classes=2)
-            # a = sess.run(meaniou)
-            # np.shape(im_softmax[0][:, 1])
-
-
             print("Epoch {}/{} batch {} {}s - loss: {}".format(i+1,
                                                                epochs,
                                                                batch,
                                                                int((stop_time - start_time)),
                                                                loss))
 
-        if (i+1) % 3 == 0:
-            if not unit_test:
+        if not unit_test:
+            if (i+1) % 3 == 0:
                 helper.save_trained_model(models_dir, training_timestamp, sess, epoch=i+1)
                 model_saved = True
 
-    if not model_saved:
-        if not unit_test:
+    if not unit_test:
+        if not model_saved:
             helper.save_trained_model(models_dir, training_timestamp, sess, epoch=i+1)
 
-    # Train on 3600 samples, validate on 900 samples
-    # Epoch 1/4 28s - loss: 0.0813 - val_loss: 0.0762
-    # Epoch 2/4
-
     pass
+
 tests.test_train_nn(train_nn)
 
 
-
-
+GLOBAL = 1
+IMAGE_SHAPE = None
+KEEP_PROB = None
+LOGITS = None
+SESSION = None
+VGG_INPUT = None
 
 def run():
     num_classes = 2
@@ -279,8 +269,6 @@ def run():
                  training_timestamp,
                  )
 
-
-
             # Save inference data using helper.save_inference_samples
             if 0:
                 helper.save_inference_samples(runs_dir,
@@ -293,16 +281,13 @@ def run():
                                       vgg_input,
                                       )
 
-        # OPTIONAL: Apply the trained model to a video
+        # Apply the trained model to a video
         if 1:
-            pass
-
 
             with tf.Session() as sess:
                 sess.run(tf.global_variables_initializer())
                 saver = tf.train.Saver()
 
-                model_file = "./models/1505127966.234497/1-epoch"
                 model_file = "./models/1505134276.3176534/20-epoch"
                 
                 print("Restoring model...")
@@ -311,35 +296,31 @@ def run():
 
                 from moviepy.video.io.VideoFileClip import VideoFileClip
 
-                global SESSION
-                SESSION = sess
-
-                global LOGITS
-                LOGITS = logits
-
                 global IMAGE_SHAPE
                 IMAGE_SHAPE = image_shape
 
                 global KEEP_PROB
                 KEEP_PROB = vgg_keep_prob
 
+                global LOGITS
+                LOGITS = logits
+
+                global SESSION
+                SESSION = sess
+
                 global VGG_INPUT
                 VGG_INPUT = vgg_input
 
-                clip1 = VideoFileClip("video/drive_2.mp4")
-                white_clip = clip1.fl_image(process_image) #NOTE: this function expects color images!!
+                clip = VideoFileClip("video/drive_2.mp4")
+                white_clip = clip.fl_image(process_image) #NOTE: this function expects color images!!
                 white_clip.write_videofile("video/drive_2_out.mp4", audio=False)
 
 
-
-
-def process_image(img):
+def process_image(image):
 
     sess = SESSION
     logits = LOGITS
     image_shape = IMAGE_SHAPE
-
-    image = img
 
     height = image.shape[0]
 
@@ -347,7 +328,6 @@ def process_image(img):
     crop_bottom = height - np.math.floor(height*0.25)
 
     image = image[crop_top:crop_bottom, :]
-
     image = scipy.misc.imresize(image, IMAGE_SHAPE)
 
     keep_prob = KEEP_PROB
