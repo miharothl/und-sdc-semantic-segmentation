@@ -1,6 +1,21 @@
 # Semantic Segmentation
+
+
+
+
 ### Introduction
 In this project, you'll label the pixels of a road in images using a Fully Convolutional Network (FCN).
+
+### TLDR
+
+1. Build a world
+[...](./video/drive_3_out.gif)
+
+![build a world](./video/drive_3_out.gif)
+
+![build a world](https://github.com/miharothl/und-sdc-semantic-segmentation/blob/master/video/drive_2_out.gif?raw=true)
+
+
 
 ### Setup
 ##### Frameworks and Packages
