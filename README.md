@@ -2,7 +2,7 @@
 
 ### TLDR
 
-Trained neurla network is detecting pixels of the road.
+Trained neural network is detecting pixels of the road.
 
 ![build a world](./video/project_video_out.gif)
 
